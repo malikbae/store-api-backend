@@ -62,6 +62,19 @@ const getAllProducts = async (req, res) => {
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 10;
   const skip = (page - 1) * limit;
+  const totalRows = await Product.count({
+    where: queryObject,
+    order: sort ? orderCriteria : [["createdAt", "ASC"]],
+    attributes: fields ? fieldsColumns : undefined,
+    offset: skip,
+    limit: limit,
+  });
+  const totalPage = Math.ceil(totalRows / limit);
+
+  const lowestPrice = await Product.min("price");
+  const highestPrice = await Product.max("price");
+  const lowestRating = await Product.min("rating");
+  const highestRating = await Product.max("rating");
 
   const result = Product.findAll({
     where: queryObject,
@@ -72,7 +85,7 @@ const getAllProducts = async (req, res) => {
   });
 
   const products = await result;
-  res.status(200).json({ products, nbHits: products.length });
+  res.status(200).json({ products, nbHits: products.length, totalRows, totalPage, lowestPrice, highestPrice, lowestRating, highestRating });
 };
 
 module.exports = {
